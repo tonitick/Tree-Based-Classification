@@ -16,7 +16,7 @@ struct DataItem {
   vector<Feature> features;
 };
 
-void getData(string file_path, vector<DataItem>& items);
+void getData(string file_path, vector<DataItem>& items, int num);
 Feature getFeature(const vector<DataItem>& data, int item_id, int feature_id);
 
 void showData(const vector<DataItem>& items);

@@ -5,7 +5,7 @@
 
 // #include <stdio.h>
 
-void getData(string file_path, vector<DataItem>& data) {
+void getData(string file_path, vector<DataItem>& data, int num) {
   data.clear();
 
   string s;
@@ -16,7 +16,9 @@ void getData(string file_path, vector<DataItem>& data) {
   char split;
   double value;
   
+  int count = 0;
   while(!input_file.eof()) {
+    count++;
     DataItem itemToAdd;
 
     getline(input_file,s);
@@ -39,6 +41,10 @@ void getData(string file_path, vector<DataItem>& data) {
     }
 
     data.push_back(itemToAdd);
+
+    if(num != -1 && count >= num) {
+      break;
+    }
   }
 }
 
