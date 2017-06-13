@@ -33,7 +33,7 @@ class Tree {
   void showTree();
   void setNode(int node_id, int feature_id, double partition_value);
   TreeNode getNode(int node_id);
-  int addNode(int parent_id, int left_right, int nv);
+  int addNode(int parent_id, int left_right, double pv);
  
  private:
   vector<TreeNode> nodes;

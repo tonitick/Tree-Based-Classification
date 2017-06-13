@@ -16,8 +16,9 @@ bool cmp(ItemWithOneFeature a, ItemWithOneFeature b) {
 }
 
 void rearrange(vector<ItemPack>& itempacks, NodePack& cur_nodepack, 
-    int feature_id, int split_point, int left_value, int right_value,
+    int feature_id, int split_point, double left_value, double right_value,
     const vector<DataItem>& data) {
+  printf("split point = %d, left value = %lf, right value = %lf\n", split_point, left_value, right_value);
   //get rearrange order
   int item_number = cur_nodepack.end_index - cur_nodepack.start_index;
   vector<ItemWithOneFeature> index_feature(item_number);
@@ -27,20 +28,21 @@ void rearrange(vector<ItemPack>& itempacks, NodePack& cur_nodepack,
     index_feature[i].feature = getFeature(data, itempacks[pack_index].item_index, feature_id);
   }
   sort(index_feature.begin(), index_feature.end(), cmp);
+  
   //rearrange
+  vector<ItemPack> temp;
+  for(int i = 0; i < item_number; i++) {
+    ItemPack itemPackToAdd = itempacks[index_feature[i].index];
+    temp.push_back(itemPackToAdd);
+  }
   for(int i = 0; i < item_number; i++) {
     int pack_index = cur_nodepack.start_index + i;
-    if(pack_index != index_feature[i].index) {
-      int target_index = index_feature[i].index;
-      ItemPack temp = itempacks[pack_index];
-      itempacks[pack_index] = itempacks[target_index];
-      itempacks[target_index] = temp;
-      if(pack_index <= split_point) {
-        itempacks[pack_index].current_value = left_value;
-      }
-      else {
-        itempacks[pack_index].current_value = right_value;
-      }
+    itempacks[pack_index] = temp[i];
+    if(pack_index <= split_point) {
+      itempacks[pack_index].current_value = left_value;
+    }
+    else {
+      itempacks[pack_index].current_value = right_value;
     }
   }
 }
@@ -50,6 +52,7 @@ double getObj(double g, double h) {
 }
 
 double getVal(double g, double h) {
+  // printf("g = %lf, h = %lf, result = %lf\n", g, h, - g / h);
   return - g / h;
 }
 
@@ -64,7 +67,7 @@ TreeNode Tree::getNode(int node_id) {
   return nodes[node_id];
 }
 
-int Tree::addNode(int parent_id, int left_right, int nv) {
+int Tree::addNode(int parent_id, int left_right, double nv) {
   TreeNode nodeToAdd;
   nodeToAdd.feature_id = -1;
   nodeToAdd.node_value = nv;
@@ -103,7 +106,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     return -1;
   }
   int item_number = cur_nodepack.end_index - cur_nodepack.start_index;
-  if(item_number == 0 || cur_nodepack.level >= MAX_DEPTH) { //interval with no item
+  if(item_number <= 1 || cur_nodepack.level >= MAX_DEPTH) { //interval with no item
     return -1;
   }
 
@@ -146,16 +149,18 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     double left_value, right_value;
     int split_point = -1;
     for(int i = 0; i < item_number - 1; i++) {
-      int itempack_index = cur_nodepack.start_index + index_feature[i].index;
+      int itempack_index = index_feature[i].index;
       gl += itempacks[itempack_index].first_order;
       hl += itempacks[itempack_index].second_order;
       gr -= itempacks[itempack_index].first_order;
       hr -= itempacks[itempack_index].second_order;
       if(getObj(gl, hl) + getObj(gr, hr) < opt_obj) {
         opt_obj = getObj(gl, hl) + getObj(gr, hr);
-        split_point = itempack_index;
+        split_point = cur_nodepack.start_index + i;
         left_value = getVal(gl, hl);
+        // printf("left value = %lf, gl = %lf, hl = %lf\n", left_value, gl, hl);
         right_value = getVal(gr, hr);
+        // printf("right value = %lf, gr = %lf, hr = %lf\n", right_value, gr, hr);
       }
     }
     gains[feature_id] = ori_obj - opt_obj;
@@ -198,9 +203,13 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     return -1;
   }
   else {//split node
+    printf("split point = %d, gain = %lf, feature id = %d, lv  = %lf, lr = %lf\n", split_point, gain, split_feature, left_value, right_value);
     rearrange(itempacks, cur_nodepack, split_feature,
         split_point, left_value, right_value, data);
     cur_nodepack.feature_id = split_feature;
+    assert(itempacks[split_point].current_value == left_value);
+    assert(itempacks[cur_nodepack.start_index].current_value == left_value);
+    assert(itempacks[cur_nodepack.end_index - 1].current_value == right_value);
     return split_point;
   }
 }
@@ -215,6 +224,7 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     itemPackToAdd.current_sum = 0.0;
     itemPackToAdd.first_order = 2.0 * (- data[indices[i]].label);
     itemPackToAdd.second_order = 2.0;
+    // printf("first = %lf, second = %lf\n", itemPackToAdd.first_order, itemPackToAdd.second_order);
     itempacks.push_back(itemPackToAdd);
   }
 
@@ -244,12 +254,12 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
       if(split_point != -1) {
         leaves++;
         //update splited node
-        double left_value = itempacks[cur_nodepack.start_index].current_value;
-        double right_value = itempacks[cur_nodepack.end_index - 1].current_value;
         double partition_value = getFeature(data, itempacks[split_point].item_index, cur_nodepack.feature_id).value;
         treeToAdd.setNode(cur_nodepack.node_id, cur_nodepack.feature_id, partition_value);
         
         //add two new nodes
+        double left_value = itempacks[cur_nodepack.start_index].current_value;
+        double right_value = itempacks[cur_nodepack.end_index - 1].current_value;
         int left_id = treeToAdd.addNode(cur_nodepack.node_id, 0, left_value);
         int right_id = treeToAdd.addNode(cur_nodepack.node_id, 1, right_value);
         NodePack left_Node, right_Node;
@@ -271,7 +281,8 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     //update sum, g & h
     for(int i = 0; i < itempacks.size(); i++) {
       itempacks[i].current_sum += itempacks[i].current_value;
-      itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[indices[i]].label);
+      // printf("%d\n", itempacks[i].item_index);
+      itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       itempacks[i].second_order = 2.0;
     }
 
@@ -283,8 +294,8 @@ void Tree::showTree() {
   assert(nodes.size() == left.size());
   assert(nodes.size() == right.size());
   for(int i = 0; i < nodes.size(); i++) {
-    printf("node %d: left node = %d, right node = %d, feature id = %d, partition value = %lf\n",
-        i, left[i], right[i], nodes[i].feature_id, nodes[i].partition_value);
+    printf("node %d: left node = %d, right node = %d, feature id = %d, partition value = %lf, node_value= %lf\n",
+        i, left[i], right[i], nodes[i].feature_id, nodes[i].partition_value, nodes[i].node_value);
   }
 }
 
