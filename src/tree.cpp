@@ -237,7 +237,7 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     // itemPackToAdd.first_order = 2.0 * (- data[indices[i]].label);
     // itemPackToAdd.second_order = 2.0;
     itemPackToAdd.first_order = sigmoid(0.0) - data[indices[i]].label;
-    itemPackToAdd.second_order = exp(-3 * 0.0) * sigmoid(0.0) * sigmoid(0.0);
+    itemPackToAdd.second_order = exp(-0.0) * sigmoid(0.0) * sigmoid(0.0);
     // printf("first = %lf, second = %lf\n", itemPackToAdd.first_order, itemPackToAdd.second_order);
     itempacks.push_back(itemPackToAdd);
     
@@ -303,10 +303,10 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
       // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       // itempacks[i].second_order = 2.0;
       double y = itempacks[i].current_sum;
-      itempacks[i].first_order = sigmoid(y) - data[indices[i]].label;
-      itempacks[i].second_order = exp(-3 * y) * sigmoid(y) * sigmoid(y);
+      itempacks[i].first_order = sigmoid(y) - data[itempacks[i].item_index].label;
+      itempacks[i].second_order = exp(-y) * sigmoid(y) * sigmoid(y);
       
-      loss += (exp(y) - data[itempacks[i].item_index].label) * (exp(y) - data[itempacks[i].item_index].label);
+      loss += (sigmoid(y) - data[itempacks[i].item_index].label) * (sigmoid(y) - data[itempacks[i].item_index].label);
     }
     printf("average loss = %lf\n", loss / itempacks.size());
     trees.push_back(treeToAdd);
@@ -336,7 +336,7 @@ vector<double> Forest::estimate(const vector<DataItem>& data) {
       }
     }
     
-    result.push_back(value);
+    result.push_back(sigmoid(value));
   }
   
   return result; 

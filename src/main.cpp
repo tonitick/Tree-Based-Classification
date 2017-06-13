@@ -6,7 +6,8 @@
 
 int main() {
   //train data
-  int item_num = 1866819;
+  // int item_num = 1866819;
+  int item_num = 100000;
   vector<DataItem> train_data;
   string train_path = "../data/train_data.txt";
   double t1 = omp_get_wtime();
