@@ -5,7 +5,7 @@
 
 // #include <stdio.h>
 
-void getData(string file_path, vector<DataItem>& data, int num) {
+void getData(string file_path, vector<DataItem>& data, int num, int train_test) {
   data.clear();
 
   string s;
@@ -18,7 +18,6 @@ void getData(string file_path, vector<DataItem>& data, int num) {
   
   int count = 0;
   while(!input_file.eof()) {
-    count++;
     DataItem itemToAdd;
 
     getline(input_file,s);
@@ -28,23 +27,35 @@ void getData(string file_path, vector<DataItem>& data, int num) {
     ss >> label;
     itemToAdd.label = label;
 
-    while(1) {
-      ss >> feature_id >> split >> value;
-      if (ss.fail()) 
-        break;
+    if(train_test == 0 || label == data.size()) {
+      count++;
+      while(1) {
+        ss >> feature_id >> split >> value;
+        if (ss.fail()) {
+          break;
+        }
 
-      Feature featureToAdd;
-      featureToAdd.feature_id = feature_id;
-      featureToAdd.value = value;
+        Feature featureToAdd;
+        featureToAdd.feature_id = feature_id;
+        featureToAdd.value = value;
 
-      itemToAdd.features.push_back(featureToAdd);
+        itemToAdd.features.push_back(featureToAdd);
+      }
+
+      data.push_back(itemToAdd);
     }
-
-    data.push_back(itemToAdd);
 
     if(num != -1 && count >= num) {
       break;
     }
+  }
+}
+
+void writeData(string file_path, const vector<double>& data) {
+  ofstream output_file(file_path.c_str());
+  output_file << 'id,lable' << endl;
+  for(int i = 0; i < data.size(); i++) {
+    output_file << i << ',' << data[i] << endl;
   }
 }
 

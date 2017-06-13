@@ -67,6 +67,13 @@ TreeNode Tree::getNode(int node_id) {
   return nodes[node_id];
 }
 
+int Tree::getLeftNodeId(int node_id) {
+  return left[node_id];
+}
+int Tree::getRightNodeId(int node_id) {
+  return right[node_id];
+}
+
 int Tree::addNode(int parent_id, int left_right, double nv) {
   TreeNode nodeToAdd;
   nodeToAdd.feature_id = -1;
@@ -130,7 +137,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
   }
 
   //find split feature with parallelization
-  // #pragma omp parallel for
+  #pragma omp parallel for
   for(int feature_id = 0; feature_id < FEATURE_NUMBER; feature_id++) {    
     //get features of each item
     vector<ItemWithOneFeature> index_feature(item_number);
@@ -141,7 +148,6 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     }
     //sort items by feature value
     sort(index_feature.begin(), index_feature.end(), cmp);
-    //caculate object function without split
 
     //find optimal split point
     double gl = 0.0, hl = 0.0, gr = G, hr = H;
@@ -217,6 +223,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
 void Forest::build(const vector<DataItem>& data, vector<int> indices) {
   trees.clear();
   //initialization: all items are assigned 0
+  double loss = 0.0;
   vector<ItemPack> itempacks;
   for(int i = 0; i < indices.size(); i++) {
     ItemPack itemPackToAdd;
@@ -226,7 +233,9 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     itemPackToAdd.second_order = 2.0;
     // printf("first = %lf, second = %lf\n", itemPackToAdd.first_order, itemPackToAdd.second_order);
     itempacks.push_back(itemPackToAdd);
+    loss += data[indices[i]].label * data[indices[i]].label;
   }
+  printf("original loss = %lf\n", loss);
 
   //build trees one by one
   for(int tree_id = 0; tree_id < tree_num; tree_id++) {
@@ -279,15 +288,46 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     }
 
     //update sum, g & h
+    double loss = 0.0;
     for(int i = 0; i < itempacks.size(); i++) {
       itempacks[i].current_sum += itempacks[i].current_value;
       // printf("%d\n", itempacks[i].item_index);
       itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       itempacks[i].second_order = 2.0;
+      loss += (itempacks[i].current_sum - data[itempacks[i].item_index].label) * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
     }
-
+    printf("loss = %lf\n", loss);
     trees.push_back(treeToAdd);
   }
+}
+
+vector<double> Forest::estimate(const vector<DataItem>& data) {
+  vector<double> result;
+  for(int i = 0; i < data.size(); i++) {
+    double value = 0.0;
+    for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
+      int cur_node = 0; //root node
+      while(cur_node != -1) {
+        //find the node that the data item is assigned to
+        int split_feature = trees[tree_id].getNode(cur_node).feature_id;
+        double partition_value = trees[tree_id].getNode(cur_node).partition_value;
+        double feature_value = getFeature(data, i, split_feature).value;
+        if(feature_value <= partition_value) {
+          cur_node = trees[tree_id].getLeftNodeId(cur_node);
+        }
+        else {
+          cur_node = trees[tree_id].getRightNodeId(cur_node);
+        }
+
+        //add value
+        value += trees[tree_id].getNode(cur_node).node_value;
+      }
+    }
+    
+    result.push_back(value);
+  }
+  
+  return result; 
 }
 
 void Tree::showTree() {

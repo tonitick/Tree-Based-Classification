@@ -33,6 +33,8 @@ class Tree {
   void showTree();
   void setNode(int node_id, int feature_id, double partition_value);
   TreeNode getNode(int node_id);
+  int getLeftNodeId(int node_id);
+  int getRightNodeId(int node_id);
   int addNode(int parent_id, int left_right, double pv);
  
  private:
@@ -46,6 +48,7 @@ class Forest {
   Forest(int tn, int td, int ln);
   void showForest();
   void build(const vector<DataItem>& data, vector<int> indices);
+  vector<double> estimate(const vector<DataItem>& data);
  
  private:
   int tree_num;
