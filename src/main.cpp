@@ -16,16 +16,6 @@ int main() {
   printf("train data size = %ld\n", train_data.size());
   // showData(train_data);
 
-  // //test data
-  // vector<DataItem> test_data;
-  // string test_path = "../data/test_data.txt";
-  // double t3 = omp_get_wtime();
-  // getData(test_path, test_data, -1, 1);
-  // double t4 = omp_get_wtime();
-  // // printf("test data loaded. time cost = %lfs\n", t4 - t3);
-  // // printf("test data size = %ld\n", test_data.size());
-  // // showData(test_data);
-
   //build trees
   Forest forest(BAGGING_FREQUENCY, MAX_DEPTH, MAX_LEAVES);
   vector<int> indices;

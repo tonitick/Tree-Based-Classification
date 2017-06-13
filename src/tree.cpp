@@ -1,5 +1,6 @@
 #include "tree.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <assert.h>
 #include <vector>
@@ -54,6 +55,10 @@ double getObj(double g, double h) {
 double getVal(double g, double h) {
   // printf("g = %lf, h = %lf, result = %lf\n", g, h, - g / h);
   return - g / h;
+}
+
+double sigmoid(double x) {
+  return 1.0 / (1 + exp(-x));
 }
 
 Tree::Tree() {}
@@ -229,13 +234,16 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     ItemPack itemPackToAdd;
     itemPackToAdd.item_index = indices[i];
     itemPackToAdd.current_sum = 0.0;
-    itemPackToAdd.first_order = 2.0 * (- data[indices[i]].label);
-    itemPackToAdd.second_order = 2.0;
+    // itemPackToAdd.first_order = 2.0 * (- data[indices[i]].label);
+    // itemPackToAdd.second_order = 2.0;
+    itemPackToAdd.first_order = sigmoid(0.0) - data[indices[i]].label;
+    itemPackToAdd.second_order = exp(-3 * 0.0) * sigmoid(0.0) * sigmoid(0.0);
     // printf("first = %lf, second = %lf\n", itemPackToAdd.first_order, itemPackToAdd.second_order);
     itempacks.push_back(itemPackToAdd);
-    loss += data[indices[i]].label * data[indices[i]].label;
+    
+    loss += (sigmoid(0.0) - data[indices[i]].label) * (sigmoid(0.0) - data[indices[i]].label);
   }
-  printf("original loss = %lf\n", loss);
+  printf("original average loss = %lf\n", loss / itempacks.size());
 
   //build trees one by one
   for(int tree_id = 0; tree_id < tree_num; tree_id++) {
@@ -292,11 +300,15 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     for(int i = 0; i < itempacks.size(); i++) {
       itempacks[i].current_sum += itempacks[i].current_value;
       // printf("%d\n", itempacks[i].item_index);
-      itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
-      itempacks[i].second_order = 2.0;
-      loss += (itempacks[i].current_sum - data[itempacks[i].item_index].label) * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
+      // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
+      // itempacks[i].second_order = 2.0;
+      double y = itempacks[i].current_sum;
+      itempacks[i].first_order = sigmoid(y) - data[indices[i]].label;
+      itempacks[i].second_order = exp(-3 * y) * sigmoid(y) * sigmoid(y);
+      
+      loss += (exp(y) - data[itempacks[i].item_index].label) * (exp(y) - data[itempacks[i].item_index].label);
     }
-    printf("loss = %lf\n", loss);
+    printf("average loss = %lf\n", loss / itempacks.size());
     trees.push_back(treeToAdd);
   }
 }
