@@ -53,7 +53,7 @@ void getData(string file_path, vector<DataItem>& data, int num, int train_test) 
 
 void writeData(string file_path, const vector<double>& data) {
   ofstream output_file(file_path.c_str());
-  output_file << "id,lable" << endl;
+  output_file << "id,label" << endl;
   for(int i = 0; i < data.size(); i++) {
     output_file << i << ',' << data[i] << endl;
   }

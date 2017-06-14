@@ -114,6 +114,12 @@ Forest::Forest(int tn, int td, int ln) {
 
 int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     const vector<DataItem>& data, int leaves) {
+  if(cur_nodepack.node_id % 2) {
+    printf("split left\n");
+  }
+  else {
+    printf("split right\n");
+  }
   if(leaves + 1 >= leave_num) {
     return -1;
   }
@@ -267,7 +273,6 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
       
       int split_point;
       split_point = splitNode(cur_nodepack, itempacks, data, leaves);
-      nodepack_index++;
       if(split_point != -1) {
         leaves++;
         //update splited node
@@ -346,8 +351,8 @@ void Tree::showTree() {
   assert(nodes.size() == left.size());
   assert(nodes.size() == right.size());
   for(int i = 0; i < nodes.size(); i++) {
-    printf("node %d: left node = %d, right node = %d, feature id = %d, partition value = %lf, node_value= %lf\n",
-        i, left[i], right[i], nodes[i].feature_id, nodes[i].partition_value, nodes[i].node_value);
+    printf("node %d: left node = %d, right node = %d, feature id = %d, partition value = %lf, node_value= %lf, level = %d\n",
+        i, left[i], right[i], nodes[i].feature_id, nodes[i].partition_value, nodes[i].node_value, nodes[i].level);
   }
 }
 
