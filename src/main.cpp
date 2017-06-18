@@ -30,23 +30,30 @@ int main() {
 
   forest.showForest();
 
+  //testing1
+  vector<vector<double> >result1 = forest.estimateTreeWise(train_data, 0);
+  string result1_path = "../data/result1.txt";
+  writeDataTreeWise(result1_path, result1, 0);
+
+
+
   //testing
   item_num = TESTING_SET_SIZE;
   vector<DataItem> test_data;
   string test_path = "../data/test_data.txt";
   double t7 = omp_get_wtime();
-  getData(test_path, test_data, item_num, 0);
+  getData(test_path, test_data, item_num, 1);
   double t8 = omp_get_wtime();
   printf("testing data loaded. time cost = %lfs\n", t8 - t7);
   printf("testing data size = %ld\n", test_data.size());
-  vector<double> result = forest.estimate(test_data);
+  vector<vector<double> >result2 = forest.estimateTreeWise(test_data, 1);
   // double loss = 0;
   // for(int i = 0; i < result.size(); i++) {
   //   loss += (result[i] - train_data[i].label);
   // }
   // printf("averate loss = %lf\n", loss / item_num);
-  string output_path = "../data/submission.txt";
-  writeData(output_path, result);
+  string result2_path = "../data/result2.txt";
+  writeDataTreeWise(result2_path, result2, 1);
 
   return 0;
 }

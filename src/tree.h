@@ -49,6 +49,9 @@ class Forest {
   void showForest();
   void build(const vector<DataItem>& data, vector<int> indices);
   vector<double> estimate(const vector<DataItem>& data);
+
+  vector<vector<double> > estimateTreeWise(const vector<DataItem>& data, int train_test);
+
  
  private:
   int tree_num;

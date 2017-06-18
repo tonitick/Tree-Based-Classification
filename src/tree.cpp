@@ -265,6 +265,7 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     rootNodePack.feature_id = -1; //not splited yet
     nodepacks.push_back(rootNodePack);
 
+    //build current tree from root node
     int nodepack_index = 0;
     while(nodepack_index < nodepacks.size()) {
       NodePack cur_nodepack = nodepacks[nodepack_index];
@@ -324,8 +325,9 @@ vector<double> Forest::estimate(const vector<DataItem>& data) {
     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
       int cur_node = 0; //root node initially
       int tar_node = 0; //root node initially
+
+      //find the node that the data item is assigned to
       while(cur_node != -1) {
-        //find the node that the data item is assigned to
         int split_feature = trees[tree_id].getNode(cur_node).feature_id;
         double partition_value = trees[tree_id].getNode(cur_node).partition_value;
         double feature_value = getFeature(data, i, split_feature).value;
@@ -349,42 +351,49 @@ vector<double> Forest::estimate(const vector<DataItem>& data) {
   return result; 
 }
 
-// vector<vector<double> > Forest::estimateTreeWise(const vector<DataItem>& data, int train_test) {
-//   vector<vector<double> > result;
-//   for(int i = 0; i < data.size(); i++) {
-//     vector<double> result_item;
-//     double sum = 0.0;
-//     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
-//       result_item.clear();
-//       int cur_node = 0; //root node
-//       while(cur_node != -1) {
-//         //find the node that the data item is assigned to
-//         int split_feature = trees[tree_id].getNode(cur_node).feature_id;
-//         double partition_value = trees[tree_id].getNode(cur_node).partition_value;
-//         double feature_value = getFeature(data, i, split_feature).value;
-//         if(feature_value <= partition_value) {
-//           cur_node = trees[tree_id].getLeftNodeId(cur_node);
-//         }
-//         else {
-//           cur_node = trees[tree_id].getRightNodeId(cur_node);
-//         }
+vector<vector<double> > Forest::estimateTreeWise(const vector<DataItem>& data, int train_test) {
+  vector<vector<double> > result;
+  for(int i = 0; i < data.size(); i++) {
+    vector<double> result_item;
+    double sum = 0.0;
+    for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
+      int cur_node = 0; //root node initially
+      int tar_node = 0; //root node initially
 
-//         //add value
-//         double value = trees[tree_id].getNode(cur_node).node_value; //value of currnet tree
-//         sum += value; //sum
-//         result_item.push_back(value);
-//         result_item.push_back(sum);
-//         result_item.push_back(sigmoid(sum)); //estimate value
-//         if(train_test == 0) {
-//           result_item.push_back((sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label));
-//         }
-//       }
-//     }
-//     result.push_back(result_item);
-//   }
+      //find the node that the data item is assigned to
+      while(cur_node != -1) {
+        int split_feature = trees[tree_id].getNode(cur_node).feature_id;
+        double partition_value = trees[tree_id].getNode(cur_node).partition_value;
+        double feature_value = getFeature(data, i, split_feature).value;
+        if(feature_value <= partition_value) {
+          tar_node = cur_node;
+          cur_node = trees[tree_id].getLeftNodeId(cur_node);
+        }
+        else {
+          tar_node = cur_node;
+          cur_node = trees[tree_id].getRightNodeId(cur_node);
+        }
+      }
+
+      //add value
+      double value = trees[tree_id].getNode(tar_node).node_value; //value of currnet tree
+      sum += value; //sum
+      result_item.push_back(value);
+      result_item.push_back(sum);
+      result_item.push_back(sigmoid(sum)); //estimate value
+      if(train_test == 0) {
+        result_item.push_back((sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label));
+      }
+    }
+    if(train_test == 0) {
+      result_item.push_back(data[i].label);
+    }
+
+    result.push_back(result_item);
+  }
   
-//   return result; 
-// }
+  return result; 
+}
 
 void Tree::showTree() {
   assert(nodes.size() == left.size());

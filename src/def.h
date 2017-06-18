@@ -3,7 +3,7 @@
 
 #define FEATURE_FRACTION 0.8
 #define BAGGING_FRACTION 0.8
-#define BOOSTING_SIZE 5
+#define BOOSTING_SIZE 2
 #define MAX_LEAVES 32
 #define MAX_DEPTH 7
 #define LEARNING_RATE 1.0

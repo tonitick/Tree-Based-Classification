@@ -3,6 +3,8 @@
 #include <sstream>
 #include <fstream>
 
+#include <stdio.h>
+
 void getData(string file_path, vector<DataItem>& data, int num, int train_test) {
   data.clear();
 
@@ -25,7 +27,7 @@ void getData(string file_path, vector<DataItem>& data, int num, int train_test) 
     ss >> label;
     itemToAdd.label = label;
 
-    if(train_test == 0 || label == data.size()) {
+    if(train_test == 0 || label == data.size()) { //remove duplicate item in testing set
       count++;
       while(1) {
         ss >> feature_id >> split >> value;
@@ -57,32 +59,6 @@ void writeData(string file_path, const vector<double>& data) {
   }
 }
 
-void writeDataTreeWise(string file_path, const vector<vector<double> >& data, int train_test) {
-  ofstream output_file(file_path.c_str());
-  output_file << "id";
-  if(data.size() && data[0].size()) {
-    int dataitem_size = data[0].size();
-    int tree_num = dataitem_size / (3 + train_test * 2);
-    for(int i = 0; i < tree_num; i++) {
-      output_file << "tree" << i << "value,";
-      output_file << "tree" << i << "sum,";
-      output_file << "tree" << i << "estimate,";
-      if(train_test) {
-        output_file << "tree" << i << "estimate,";
-        output_file << "tree" << i << "estimate,";
-      }
-    }
-
-    for(int i = 0; i < data.size(); i++) {
-      output_file << i;
-      for(int j = 0; j < dataitem_size; j++) {
-        output_file << ',' << data[i][j];
-      }
-      output_file << endl;
-    }
-  }
-}
-
 Feature getFeature(const vector<DataItem>& data, int item_id, int feature_id) {
   DataItem item = data[item_id];
   for(int i = 0; i < item.features.size(); i++) {
@@ -108,5 +84,46 @@ void showData(const vector<DataItem>& items) {
           item.features[j].value);
     }
     printf("\n");
+  }
+}
+
+void writeDataTreeWise(string file_path, const vector<vector<double> >& data, int train_test) {
+  ofstream output_file(file_path.c_str());
+  output_file << "id";
+  if(data.size() && data[0].size()) {
+    int dataitem_size = data[0].size();
+    int tree_num;
+    if(train_test == 0) {
+      tree_num = (dataitem_size - 1) / 4;
+    }
+    else {
+      tree_num = dataitem_size / 3;
+    }
+
+    printf("tree number = %d\n", tree_num);
+
+    for(int i = 0; i < tree_num; i++) {
+      output_file << ",";
+      output_file << "tree" << i << "value,";
+      output_file << "tree" << i << "sum,";
+      output_file << "tree" << i << "estimate";
+      if(train_test == 0) {
+        output_file << ",tree" << i << "error";
+      }
+    }
+    if(train_test == 0) {
+      output_file << ",label" << endl;
+    }
+    else {
+      output_file << endl;
+    }
+
+    for(int i = 0; i < data.size(); i++) {
+      output_file << i;
+      for(int j = 0; j < dataitem_size; j++) {
+        output_file << ',' << data[i][j];
+      }
+      output_file << endl;
+    }
   }
 }
