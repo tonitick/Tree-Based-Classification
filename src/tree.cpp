@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <vector>
-#include <algorithm> //sort
-#include <omp.h>
+#include <algorithm> //enable sort
+#include <omp.h> //openmp parallelization
 using namespace std;
 
 struct ItemWithOneFeature {
@@ -15,6 +15,14 @@ struct ItemWithOneFeature {
 
 bool cmp(ItemWithOneFeature a, ItemWithOneFeature b) {
   return a.feature.value < b.feature.value;
+}
+
+bool cmp2(ItemPack a, ItemPack b) {
+  return a.item_index < b.item_index;
+}
+
+bool cmp3(ItemPack a, ItemPack b) {
+  return a.first_order < b.first_order;
 }
 
 void rearrange(vector<ItemPack>& itempacks, NodePack& cur_nodepack, 
@@ -219,7 +227,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     return -1;
   }
   else {//split node
-    printf("split point = %d, gain = %lf, feature id = %d, lv  = %lf, lr = %lf, ln = %d, rn = %d\n", split_point, gain, split_feature, left_value, right_value, split_point - cur_nodepack.start_index + 1, cur_nodepack.end_index - split_point - 1);
+    printf("split point = %d, gain = %lf, feature id = %d, lv  = %lf, rv = %lf, ln = %d, rn = %d\n", split_point, gain, split_feature, left_value, right_value, split_point - cur_nodepack.start_index + 1, cur_nodepack.end_index - split_point - 1);
     rearrange(itempacks, cur_nodepack, split_feature,
         split_point, left_value, right_value, data);
     cur_nodepack.feature_id = split_feature;
@@ -229,6 +237,102 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     return split_point;
   }
 }
+
+// void Forest::build(const vector<DataItem>& data, vector<int> indices) {
+//   trees.clear();
+//   //initialization: all items are assigned 0
+//   double loss = 0.0;
+//   vector<ItemPack> itempacks;
+//   for(int i = 0; i < indices.size(); i++) {
+//     ItemPack itemPackToAdd;
+//     itemPackToAdd.item_index = indices[i];
+//     itemPackToAdd.current_sum = 0.0;
+//     // itemPackToAdd.first_order = 2.0 * (- data[indices[i]].label);
+//     // itemPackToAdd.second_order = 2.0;
+//     itemPackToAdd.first_order = sigmoid(0.0) - data[indices[i]].label;
+//     itemPackToAdd.second_order = exp(-0.0) * sigmoid(0.0) * sigmoid(0.0);
+//     // printf("first = %lf, second = %lf\n", itemPackToAdd.first_order, itemPackToAdd.second_order);
+//     itempacks.push_back(itemPackToAdd);
+    
+//     loss += (sigmoid(0.0) - data[indices[i]].label) * (sigmoid(0.0) - data[indices[i]].label);
+//   }
+//   printf("data size = %d\n", itempacks.size());
+//   printf("original average loss = %lf\n", loss / itempacks.size());
+//   loss = 0.0;
+
+//   //build trees one by one
+//   for(int tree_id = 0; tree_id < tree_num; tree_id++) {
+//     int leaves = 1;
+//     Tree treeToAdd;
+//     //add root to current tree
+//     int root_id = treeToAdd.addNode(-1, -1, 0.0); 
+//     vector<NodePack> nodepacks;
+//     NodePack rootNodePack;
+//     rootNodePack.node_id = root_id;
+//     rootNodePack.level = 0;
+//     rootNodePack.start_index = 0;
+//     rootNodePack.end_index = indices.size();
+//     rootNodePack.feature_id = -1; //not splited yet
+//     nodepacks.push_back(rootNodePack);
+
+//     //build current tree from root node
+//     int nodepack_index = 0;
+//     while(nodepack_index < nodepacks.size()) {
+//       NodePack cur_nodepack = nodepacks[nodepack_index];
+//       nodepack_index++;
+      
+//       int split_point;
+//       split_point = splitNode(cur_nodepack, itempacks, data, leaves);
+//       if(split_point != -1) {
+//         leaves++;
+//         //update splited node
+//         double partition_value = getFeature(data, itempacks[split_point].item_index, cur_nodepack.feature_id).value;
+//         treeToAdd.setNode(cur_nodepack.node_id, cur_nodepack.feature_id, partition_value);
+        
+//         //add two new nodes
+//         double left_value = itempacks[cur_nodepack.start_index].current_value;
+//         double right_value = itempacks[cur_nodepack.end_index - 1].current_value;
+//         int left_id = treeToAdd.addNode(cur_nodepack.node_id, 0, left_value);
+//         int right_id = treeToAdd.addNode(cur_nodepack.node_id, 1, right_value);
+//         NodePack left_Node, right_Node;
+//         left_Node.node_id = left_id;
+//         left_Node.level = cur_nodepack.level + 1;
+//         left_Node.start_index = cur_nodepack.start_index;
+//         left_Node.end_index = split_point + 1;
+//         left_Node.feature_id = -1;
+//         right_Node.node_id = right_id;
+//         right_Node.level = cur_nodepack.level + 1;
+//         right_Node.start_index = split_point + 1;
+//         right_Node.end_index = cur_nodepack.end_index;
+//         right_Node.feature_id = -1;
+//         nodepacks.push_back(left_Node);
+//         nodepacks.push_back(right_Node);
+//       } 
+//     }
+
+//     trees.push_back(treeToAdd);
+
+//     //update sum, g & h
+//     sort(itempacks.begin(), itempacks.end(), cmp2);
+//     double loss = 0.0;
+//     for(int i = 0; i < itempacks.size(); i++) {
+//       // printf("itempack size = %d\n", itempacks.size());
+//       itempacks[i].current_sum += itempacks[i].current_value;
+//       // printf("%d\n", itempacks[i].item_index);
+//       // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
+//       // itempacks[i].second_order = 2.0;
+//       double y = itempacks[i].current_sum;
+//       assert(itempacks[i].item_index == i);
+//       itempacks[i].first_order = sigmoid(y) - data[itempacks[i].item_index].label;
+//       itempacks[i].second_order = exp(-y) * sigmoid(y) * sigmoid(y);
+      
+//       loss += (sigmoid(y) - data[itempacks[i].item_index].label) * (sigmoid(y) - data[itempacks[i].item_index].label);
+//     }
+//     sort(itempacks.begin(), itempacks.end(), cmp3);
+//     printf("data size = %d\n", itempacks.size());
+//     printf("average loss = %lf\n", loss / itempacks.size());
+//   }
+// }
 
 void Forest::build(const vector<DataItem>& data, vector<int> indices) {
   trees.clear();
@@ -248,13 +352,15 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
     
     loss += (sigmoid(0.0) - data[indices[i]].label) * (sigmoid(0.0) - data[indices[i]].label);
   }
+  printf("data size = %d\n", itempacks.size());
   printf("original average loss = %lf\n", loss / itempacks.size());
+  loss = 0.0;
 
   //build trees one by one
   for(int tree_id = 0; tree_id < tree_num; tree_id++) {
     int leaves = 1;
     Tree treeToAdd;
-    //add root
+    //add root to current tree
     int root_id = treeToAdd.addNode(-1, -1, 0.0); 
     vector<NodePack> nodepacks;
     NodePack rootNodePack;
@@ -300,26 +406,33 @@ void Forest::build(const vector<DataItem>& data, vector<int> indices) {
       } 
     }
 
+    trees.push_back(treeToAdd);
+
     //update sum, g & h
+    sort(itempacks.begin(), itempacks.end(), cmp2);
     double loss = 0.0;
     for(int i = 0; i < itempacks.size(); i++) {
+      // printf("itempack size = %d\n", itempacks.size());
       itempacks[i].current_sum += itempacks[i].current_value;
       // printf("%d\n", itempacks[i].item_index);
       // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       // itempacks[i].second_order = 2.0;
       double y = itempacks[i].current_sum;
+      assert(itempacks[i].item_index == i);
       itempacks[i].first_order = sigmoid(y) - data[itempacks[i].item_index].label;
       itempacks[i].second_order = exp(-y) * sigmoid(y) * sigmoid(y);
       
       loss += (sigmoid(y) - data[itempacks[i].item_index].label) * (sigmoid(y) - data[itempacks[i].item_index].label);
     }
+    sort(itempacks.begin(), itempacks.end(), cmp3);
+    printf("data size = %d\n", itempacks.size());
     printf("average loss = %lf\n", loss / itempacks.size());
-    trees.push_back(treeToAdd);
   }
 }
 
 vector<double> Forest::estimate(const vector<DataItem>& data) {
   vector<double> result;
+   
   for(int i = 0; i < data.size(); i++) {
     double value = 0.0;
     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
@@ -343,6 +456,7 @@ vector<double> Forest::estimate(const vector<DataItem>& data) {
 
       //add value
       value += trees[tree_id].getNode(tar_node).node_value;
+
     }
     
     result.push_back(sigmoid(value));
@@ -353,6 +467,12 @@ vector<double> Forest::estimate(const vector<DataItem>& data) {
 
 vector<vector<double> > Forest::estimateTreeWise(const vector<DataItem>& data, int train_test) {
   vector<vector<double> > result;
+  
+  vector<double> for_print(trees.size());
+  for(int i = 0; i< for_print.size(); i++) {
+    for_print[i] = 0.0;
+  }
+
   for(int i = 0; i < data.size(); i++) {
     vector<double> result_item;
     double sum = 0.0;
@@ -383,6 +503,7 @@ vector<vector<double> > Forest::estimateTreeWise(const vector<DataItem>& data, i
       result_item.push_back(sigmoid(sum)); //estimate value
       if(train_test == 0) {
         result_item.push_back((sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label));
+        for_print[tree_id] += (sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label);
       }
     }
     if(train_test == 0) {
@@ -391,7 +512,13 @@ vector<vector<double> > Forest::estimateTreeWise(const vector<DataItem>& data, i
 
     result.push_back(result_item);
   }
-  
+
+  if(train_test == 0) {
+    printf("data size = %d\n", data.size());
+    for(int i = 0; i < for_print.size(); i++) {
+      printf("average loss of tree %d: %f\n", i, for_print[i] / data.size());
+    }
+  }
   return result; 
 }
 

@@ -31,10 +31,9 @@ int main() {
   forest.showForest();
 
   //testing1
-  vector<vector<double> >result1 = forest.estimateTreeWise(train_data, 0);
+  vector<vector<double> > result1 = forest.estimateTreeWise(train_data, 0);
   string result1_path = "../data/result1.txt";
   writeDataTreeWise(result1_path, result1, 0);
-
 
 
   //testing
@@ -54,6 +53,11 @@ int main() {
   // printf("averate loss = %lf\n", loss / item_num);
   string result2_path = "../data/result2.txt";
   writeDataTreeWise(result2_path, result2, 1);
+
+  // //output
+  // vector<double> ouput = forest.estimate(train_data);
+  // string output_path = "../data/submission.txt";
+  // writeData(output_path, ouput);
 
   return 0;
 }
