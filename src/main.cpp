@@ -6,7 +6,7 @@
 
 int main() {
   //train data
-  // int item_num = 1866819;
+  // int item_num = TRAINING_SET_SIZE;
   int item_num = 100000;
   vector<DataItem> train_data;
   string train_path = "../data/train_data.txt";
@@ -18,7 +18,7 @@ int main() {
   // showData(train_data);
 
   //build trees
-  Forest forest(BAGGING_FREQUENCY, MAX_DEPTH, MAX_LEAVES);
+  Forest forest(BOOSTING_SIZE, MAX_DEPTH, MAX_LEAVES);
   vector<int> indices;
   for(int i = 0; i < item_num; i++) {
     indices.push_back(i);
@@ -31,7 +31,7 @@ int main() {
   forest.showForest();
 
   //testing
-  item_num = 282796;
+  item_num = TESTING_SET_SIZE;
   vector<DataItem> test_data;
   string test_path = "../data/test_data.txt";
   double t7 = omp_get_wtime();

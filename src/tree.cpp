@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <vector>
-#include <algorithm>
+#include <algorithm> //sort
+#include <omp.h>
 using namespace std;
 
 struct ItemWithOneFeature {
@@ -19,7 +20,6 @@ bool cmp(ItemWithOneFeature a, ItemWithOneFeature b) {
 void rearrange(vector<ItemPack>& itempacks, NodePack& cur_nodepack, 
     int feature_id, int split_point, double left_value, double right_value,
     const vector<DataItem>& data) {
-  printf("split point = %d, left value = %lf, right value = %lf\n", split_point, left_value, right_value);
   //get rearrange order
   int item_number = cur_nodepack.end_index - cur_nodepack.start_index;
   vector<ItemWithOneFeature> index_feature(item_number);
@@ -53,7 +53,6 @@ double getObj(double g, double h) {
 }
 
 double getVal(double g, double h) {
-  // printf("g = %lf, h = %lf, result = %lf\n", g, h, - g / h);
   return - g / h;
 }
 
@@ -114,12 +113,12 @@ Forest::Forest(int tn, int td, int ln) {
 
 int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     const vector<DataItem>& data, int leaves) {
-  if(cur_nodepack.node_id % 2) {
-    printf("split left\n");
-  }
-  else {
-    printf("split right\n");
-  }
+  // if(cur_nodepack.node_id % 2) {
+  //   printf("split left\n");
+  // }
+  // else {
+  //   printf("split right\n");
+  // }
   if(leaves + 1 >= leave_num) {
     return -1;
   }
@@ -220,7 +219,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     return -1;
   }
   else {//split node
-    printf("split point = %d, gain = %lf, feature id = %d, lv  = %lf, lr = %lf\n", split_point, gain, split_feature, left_value, right_value);
+    printf("split point = %d, gain = %lf, feature id = %d, lv  = %lf, lr = %lf, ln = %d, rn = %d\n", split_point, gain, split_feature, left_value, right_value, split_point - cur_nodepack.start_index + 1, cur_nodepack.end_index - split_point - 1);
     rearrange(itempacks, cur_nodepack, split_feature,
         split_point, left_value, right_value, data);
     cur_nodepack.feature_id = split_feature;
@@ -323,22 +322,25 @@ vector<double> Forest::estimate(const vector<DataItem>& data) {
   for(int i = 0; i < data.size(); i++) {
     double value = 0.0;
     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
-      int cur_node = 0; //root node
+      int cur_node = 0; //root node initially
+      int tar_node = 0; //root node initially
       while(cur_node != -1) {
         //find the node that the data item is assigned to
         int split_feature = trees[tree_id].getNode(cur_node).feature_id;
         double partition_value = trees[tree_id].getNode(cur_node).partition_value;
         double feature_value = getFeature(data, i, split_feature).value;
         if(feature_value <= partition_value) {
+          tar_node = cur_node;
           cur_node = trees[tree_id].getLeftNodeId(cur_node);
         }
         else {
+          tar_node = cur_node;
           cur_node = trees[tree_id].getRightNodeId(cur_node);
         }
-
-        //add value
-        value += trees[tree_id].getNode(cur_node).node_value;
       }
+
+      //add value
+      value += trees[tree_id].getNode(tar_node).node_value;
     }
     
     result.push_back(sigmoid(value));
@@ -346,6 +348,43 @@ vector<double> Forest::estimate(const vector<DataItem>& data) {
   
   return result; 
 }
+
+// vector<vector<double> > Forest::estimateTreeWise(const vector<DataItem>& data, int train_test) {
+//   vector<vector<double> > result;
+//   for(int i = 0; i < data.size(); i++) {
+//     vector<double> result_item;
+//     double sum = 0.0;
+//     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
+//       result_item.clear();
+//       int cur_node = 0; //root node
+//       while(cur_node != -1) {
+//         //find the node that the data item is assigned to
+//         int split_feature = trees[tree_id].getNode(cur_node).feature_id;
+//         double partition_value = trees[tree_id].getNode(cur_node).partition_value;
+//         double feature_value = getFeature(data, i, split_feature).value;
+//         if(feature_value <= partition_value) {
+//           cur_node = trees[tree_id].getLeftNodeId(cur_node);
+//         }
+//         else {
+//           cur_node = trees[tree_id].getRightNodeId(cur_node);
+//         }
+
+//         //add value
+//         double value = trees[tree_id].getNode(cur_node).node_value; //value of currnet tree
+//         sum += value; //sum
+//         result_item.push_back(value);
+//         result_item.push_back(sum);
+//         result_item.push_back(sigmoid(sum)); //estimate value
+//         if(train_test == 0) {
+//           result_item.push_back((sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label));
+//         }
+//       }
+//     }
+//     result.push_back(result_item);
+//   }
+  
+//   return result; 
+// }
 
 void Tree::showTree() {
   assert(nodes.size() == left.size());

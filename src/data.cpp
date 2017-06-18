@@ -3,8 +3,6 @@
 #include <sstream>
 #include <fstream>
 
-// #include <stdio.h>
-
 void getData(string file_path, vector<DataItem>& data, int num, int train_test) {
   data.clear();
 
@@ -56,6 +54,32 @@ void writeData(string file_path, const vector<double>& data) {
   output_file << "id,label" << endl;
   for(int i = 0; i < data.size(); i++) {
     output_file << i << ',' << data[i] << endl;
+  }
+}
+
+void writeDataTreeWise(string file_path, const vector<vector<double> >& data, int train_test) {
+  ofstream output_file(file_path.c_str());
+  output_file << "id";
+  if(data.size() && data[0].size()) {
+    int dataitem_size = data[0].size();
+    int tree_num = dataitem_size / (3 + train_test * 2);
+    for(int i = 0; i < tree_num; i++) {
+      output_file << "tree" << i << "value,";
+      output_file << "tree" << i << "sum,";
+      output_file << "tree" << i << "estimate,";
+      if(train_test) {
+        output_file << "tree" << i << "estimate,";
+        output_file << "tree" << i << "estimate,";
+      }
+    }
+
+    for(int i = 0; i < data.size(); i++) {
+      output_file << i;
+      for(int j = 0; j < dataitem_size; j++) {
+        output_file << ',' << data[i][j];
+      }
+      output_file << endl;
+    }
   }
 }
 
