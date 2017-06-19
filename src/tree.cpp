@@ -17,11 +17,11 @@ bool cmp(ItemWithOneFeature a, ItemWithOneFeature b) {
   return a.feature.value < b.feature.value;
 }
 
-bool cmp2(ItemPack a, ItemPack b) {
+bool cmp_index(ItemPack a, ItemPack b) {
   return a.item_index < b.item_index;
 }
 
-void rearrange(vector<ItemPack>& itempacks, NodePack& cur_nodepack, 
+void rearrange(vector<ItemPack>& itempacks, const NodePack& cur_nodepack, 
     int feature_id, int split_point, double left_value, double right_value,
     const vector<DataItem>& data) {
   //get rearrange order
@@ -117,12 +117,6 @@ Forest::Forest(int tn, int td, int ln) {
 
 int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     const vector<DataItem>& data, int leaves) {
-  // if(cur_nodepack.node_id % 2) {
-  //   printf("split left\n");
-  // }
-  // else {
-  //   printf("split right\n");
-  // }
   if(leaves + 1 >= leave_num) {
     return -1;
   }
@@ -196,8 +190,8 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
 
         if(getObj(gl, hl) + getObj(gr, hr) < opt_obj) {
           if(fraction <= 0.1) {
-            split_point = cur_nodepack.start_index + start - 1;
-            if(split_point != -1) {
+            if(start != 0) {
+              split_point = cur_nodepack.start_index + start - 1;
               partition_value = index_feature[split_point].feature.value;
               opt_obj = getObj(gl, hl) + getObj(gr, hr);
               left_value = getVal(gl, hl);
@@ -260,9 +254,9 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     rearrange(itempacks, cur_nodepack, split_feature,
         split_point, left_value, right_value, data);
     cur_nodepack.feature_id = split_feature;
-    // assert(itempacks[split_point].current_value == left_value);
-    // assert(itempacks[cur_nodepack.start_index].current_value == left_value);
-    // assert(itempacks[cur_nodepack.end_index - 1].current_value == right_value);
+    assert(itempacks[split_point].current_value == left_value);
+    assert(itempacks[cur_nodepack.start_index].current_value == left_value);
+    assert(itempacks[cur_nodepack.end_index - 1].current_value == right_value);
     return split_point;
   }
 }
@@ -342,7 +336,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
 //     trees.push_back(treeToAdd);
 
 //     //update sum, g & h
-//     sort(itempacks.begin(), itempacks.end(), cmp2);
+//     sort(itempacks.begin(), itempacks.end(), cmp_index);
 //     double loss = 0.0;
 //     for(int i = 0; i < itempacks.size(); i++) {
 //       // printf("itempack size = %d\n", itempacks.size());
@@ -464,7 +458,7 @@ vector<vector<double> > Forest::estimateTreeWise(const vector<DataItem>& data, i
       printf("average loss of tree %d: %f\n", i, for_print[i] / data.size());
     }
   }
-  return result; 
+  return result;
 }
 
 vector<vector<double> > Forest::build(const vector<DataItem>& data, vector<int> indices) {
@@ -548,7 +542,7 @@ vector<vector<double> > Forest::build(const vector<DataItem>& data, vector<int> 
     trees.push_back(treeToAdd);
 
     //update sum, g & h
-    sort(itempacks.begin(), itempacks.end(), cmp2);
+    sort(itempacks.begin(), itempacks.end(), cmp_index);
     double loss = 0.0;
     for(int i = 0; i < itempacks.size(); i++) {
       // printf("itempack size = %d\n", itempacks.size());
