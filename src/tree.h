@@ -43,12 +43,12 @@ class Tree {
   vector<int> right; //the node_id of right spring
 };
 
-class Forest {
+class GBDT {
  public:
-  Forest(int tn, int td, int ln);
-  void showForest();
-  // void build(const vector<DataItem>& data, vector<int> indices);
-  vector<vector<double> > build(const vector<DataItem>& data, vector<int> indices);
+  GBDT(int tn, int td, int ln);
+  void show();
+  void build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id);
+  // vector<vector<double> > build(const vector<DataItem>& data, vector<int> items_index);
   vector<double> estimate(const vector<DataItem>& data);
 
   vector<vector<double> > estimateTreeWise(const vector<DataItem>& data, int train_test);
@@ -63,7 +63,12 @@ class Forest {
   //return split point in itempacks
   //return -1 if not split
   int splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
-      const vector<DataItem>& data, int leaves);
+      const vector<DataItem>& data, const vector<int> features_id, int leaves);
+
+  //used by spliNode method
+  void rearrange(vector<ItemPack>& itempacks, const NodePack& cur_nodepack, 
+    int feature_id, int split_point, double left_value, double right_value,
+    const vector<DataItem>& data);
 };
 
 #endif

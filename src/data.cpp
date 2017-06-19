@@ -87,43 +87,43 @@ void showData(const vector<DataItem>& items) {
   }
 }
 
-void writeDataTreeWise(string file_path, const vector<vector<double> >& data, int train_test) {
-  ofstream output_file(file_path.c_str());
-  output_file << "id";
-  if(data.size() && data[0].size()) {
-    int dataitem_size = data[0].size();
-    int tree_num;
-    if(train_test == 0) {
-      tree_num = (dataitem_size - 1) / 4;
-    }
-    else {
-      tree_num = dataitem_size / 3;
-    }
+// void writeDataTreeWise(string file_path, const vector<vector<double> >& data, int train_test) {
+//   ofstream output_file(file_path.c_str());
+//   output_file << "id";
+//   if(data.size() && data[0].size()) {
+//     int dataitem_size = data[0].size();
+//     int tree_num;
+//     if(train_test == 0) {
+//       tree_num = (dataitem_size - 1) / 4;
+//     }
+//     else {
+//       tree_num = dataitem_size / 3;
+//     }
 
-    printf("tree number = %d\n", tree_num);
+//     printf("tree number = %d\n", tree_num);
 
-    for(int i = 0; i < tree_num; i++) {
-      output_file << ",";
-      output_file << "tree" << i << "value,";
-      output_file << "tree" << i << "sum,";
-      output_file << "tree" << i << "estimate";
-      if(train_test == 0) {
-        output_file << ",tree" << i << "error";
-      }
-    }
-    if(train_test == 0) {
-      output_file << ",label" << endl;
-    }
-    else {
-      output_file << endl;
-    }
+//     for(int i = 0; i < tree_num; i++) {
+//       output_file << ",";
+//       output_file << "tree" << i << "value,";
+//       output_file << "tree" << i << "sum,";
+//       output_file << "tree" << i << "estimate";
+//       if(train_test == 0) {
+//         output_file << ",tree" << i << "error";
+//       }
+//     }
+//     if(train_test == 0) {
+//       output_file << ",label" << endl;
+//     }
+//     else {
+//       output_file << endl;
+//     }
 
-    for(int i = 0; i < data.size(); i++) {
-      output_file << i;
-      for(int j = 0; j < dataitem_size; j++) {
-        output_file << ',' << data[i][j];
-      }
-      output_file << endl;
-    }
-  }
-}
+//     for(int i = 0; i < data.size(); i++) {
+//       output_file << i;
+//       for(int j = 0; j < dataitem_size; j++) {
+//         output_file << ',' << data[i][j];
+//       }
+//       output_file << endl;
+//     }
+//   }
+// }
