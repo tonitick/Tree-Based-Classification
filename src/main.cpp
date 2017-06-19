@@ -4,8 +4,10 @@
 #include <time.h>
 #include <stdio.h>
 
+#include <assert.h>
+
 int main() {
-  //train data
+  // train data
   // int item_num = TRAINING_SET_SIZE;
   int item_num = 100000;
   vector<DataItem> train_data;
@@ -24,17 +26,23 @@ int main() {
     indices.push_back(i);
   }
   double t5 = omp_get_wtime();
-  forest.build(train_data, indices);
+  vector<vector<double> > result_ori = forest.build(train_data, indices);
   double t6 = omp_get_wtime();
   printf("tree built. time cost = %lfs\n", t6 - t5);
 
   forest.showForest();
 
   //testing1
+  printf("testing result\n");
   vector<vector<double> > result1 = forest.estimateTreeWise(train_data, 0);
   string result1_path = "../data/result1.txt";
   writeDataTreeWise(result1_path, result1, 0);
-
+  // printf("%d %d %d, %d\n", result_ori.size(), result1.size());
+  assert(result_ori.size() == result1.size());
+  assert(result_ori[0].size() == result1[0].size());
+  printf("testing ori\n");
+  string result_ori_path = "../data/result_ori.txt";
+  writeDataTreeWise(result_ori_path, result_ori, 0);
 
   //testing
   item_num = TESTING_SET_SIZE;
@@ -54,10 +62,26 @@ int main() {
   string result2_path = "../data/result2.txt";
   writeDataTreeWise(result2_path, result2, 1);
 
-  // //output
-  // vector<double> ouput = forest.estimate(train_data);
-  // string output_path = "../data/submission.txt";
-  // writeData(output_path, ouput);
+  //output
+  vector<double> ouput = forest.estimate(test_data);
+  string output_path = "../data/submission.txt";
+  writeData(output_path, ouput);
 
+  // vector<DataItem> train_data;
+  // string train_path = "../data/train_data.txt";
+  // getData(train_path, train_data, -1, 0);
+  // printf("data size = %d\n", train_data.size());
+  // int count[FEATURE_NUMBER];
+  // for(int i = 0; i < FEATURE_NUMBER; i++) {
+  //   count[i] = 0;
+  // }
+  // for(int i = 0; i < train_data.size(); i++) {
+  //   for(int j = 0; j < train_data[i].features.size(); j++) {
+  //     count[train_data[i].features[j].feature_id]++;
+  //   }
+  // }
+  // for(int i = 0; i < FEATURE_NUMBER; i++) {
+  //   printf("feature %d: count = %d\n", i, count[i]);
+  // }
   return 0;
 }
