@@ -139,6 +139,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
   int split_points[FEATURE_NUMBER];
   double left_values[FEATURE_NUMBER];
   double right_values[FEATURE_NUMBER];
+  double partition_values[FEATURE_NUMBER];
 
   //calculate original value
   double G = 0.0, H = 0.0;
@@ -172,6 +173,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     double opt_obj = ori_obj;
     double left_value, right_value;
     int split_point = -1;
+    double partition_value = 520.520;
     for(int i = 0; i < item_number - 1; i++) {
       //find the range that share the same feature value
       // int start = i, end = i + 1;
@@ -191,9 +193,8 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
         opt_obj = getObj(gl, hl) + getObj(gr, hr);
         split_point = cur_nodepack.start_index + i;
         left_value = getVal(gl, hl);
-        // printf("left value = %lf, gl = %lf, hl = %lf\n", left_value, gl, hl);
         right_value = getVal(gr, hr);
-        // printf("right value = %lf, gr = %lf, hr = %lf\n", right_value, gr, hr);
+        partition_value = index_feature[i].feature.value;
       }
     }
 
@@ -202,6 +203,7 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     split_points[feature_id] = split_point;
     left_values[feature_id] = left_value;
     right_values[feature_id] = right_value;
+    partition_values[feature_id] = partition_value;
   }
 
   //split
@@ -229,8 +231,9 @@ int Forest::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     double gain = gains[split_feature];
     double left_value = left_values[split_feature];
     double right_value = right_values[split_feature];
+    double partition_value = partition_values[split_feature];
 
-    printf("split point = %d, gain = %lf, feature id = %d, lv  = %lf, rv = %lf, ln = %d, rn = %d\n", split_point, gain, split_feature, left_value, right_value, split_point - cur_nodepack.start_index + 1, cur_nodepack.end_index - split_point - 1);
+    printf("split point = %d, gain = %lf, split feature = %d, partition value = %lf, lv  = %lf, rv = %lf, ln = %d, rn = %d\n", split_point, gain, split_feature, partition_value, left_value, right_value, split_point - cur_nodepack.start_index + 1, cur_nodepack.end_index - split_point - 1);
     rearrange(itempacks, cur_nodepack, split_feature,
         split_point, left_value, right_value, data);
     cur_nodepack.feature_id = split_feature;
