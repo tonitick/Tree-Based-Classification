@@ -2,7 +2,6 @@
 #define __TREE_H__
 
 #include "data.h"
-#include <omp.h>
 
 struct ItemPack {
   int item_index; //item index in dataset
@@ -47,7 +46,7 @@ class GBDT {
  public:
   GBDT(int tn, int td, int ln);
   void show();
-  void build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id);
+  double build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id);
   // vector<vector<double> > build(const vector<DataItem>& data, vector<int> items_index);
   vector<double> estimate(const vector<DataItem>& data);
 

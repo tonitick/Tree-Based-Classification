@@ -125,7 +125,6 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
     return -1;
   }
 
-
   //calculate original value
   double G = 0.0, H = 0.0;
   for(int i = 0; i < item_number; i++) {
@@ -214,7 +213,6 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
 
         }
       }
-
       index = end;
     }
 
@@ -270,7 +268,7 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
   }
 }
 
-void GBDT::build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id) {
+double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id) {
   trees.clear();
   //initialization: all items are assigned 0
   double loss = 0.0;
@@ -290,7 +288,6 @@ void GBDT::build(const vector<DataItem>& data, const vector<int> items_index, co
   }
   printf("data size = %d\n", itempacks.size());
   printf("original average loss = %lf\n", loss / itempacks.size());
-  loss = 0.0;
 
   //build trees one by one
   for(int tree_id = 0; tree_id < tree_num; tree_id++) {
@@ -317,6 +314,7 @@ void GBDT::build(const vector<DataItem>& data, const vector<int> items_index, co
       int split_point = splitNode(cur_nodepack, itempacks, data, features_id, leaves);
       if(split_point != -1) {
         leaves++;
+        
         //update splited node
         double partition_value = getFeature(data, itempacks[split_point].item_index, cur_nodepack.feature_id).value;
         treeToAdd.setNode(cur_nodepack.node_id, cur_nodepack.feature_id, partition_value);
@@ -339,14 +337,14 @@ void GBDT::build(const vector<DataItem>& data, const vector<int> items_index, co
         right_Node.feature_id = -1;
         nodepacks.push_back(left_Node);
         nodepacks.push_back(right_Node);
-      } 
+      }
     }
 
     trees.push_back(treeToAdd);
 
     //update sum, g & h
     sort(itempacks.begin(), itempacks.end(), cmp_index);
-    double loss = 0.0;
+    loss = 0.0;
     for(int i = 0; i < itempacks.size(); i++) {
       // printf("itempack size = %d\n", itempacks.size());
       itempacks[i].current_sum += itempacks[i].current_value;
@@ -354,15 +352,17 @@ void GBDT::build(const vector<DataItem>& data, const vector<int> items_index, co
       // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       // itempacks[i].second_order = 2.0;
       double y = itempacks[i].current_sum;
-      assert(itempacks[i].item_index == i);
+      // assert(itempacks[i].item_index == i);
       itempacks[i].first_order = sigmoid(y) - data[itempacks[i].item_index].label;
       itempacks[i].second_order = exp(-y) * sigmoid(y) * sigmoid(y);
       
       loss += (sigmoid(y) - data[itempacks[i].item_index].label) * (sigmoid(y) - data[itempacks[i].item_index].label);
     }
     printf("data size = %d\n", itempacks.size());
-    printf("average loss = %lf\n", loss / itempacks.size());
+    printf("average loss of previous %d trees: %lf\n", tree_id + 1,loss / itempacks.size());
   }
+
+  return loss;
 }
 
 vector<double> GBDT::estimate(const vector<DataItem>& data) {
@@ -397,7 +397,7 @@ vector<double> GBDT::estimate(const vector<DataItem>& data) {
     result.push_back(sigmoid(value));
   }
   
-  return result; 
+  return result;
 }
 
 vector<vector<double> > GBDT::estimateTreeWise(const vector<DataItem>& data, int train_test) {
@@ -412,9 +412,7 @@ vector<vector<double> > GBDT::estimateTreeWise(const vector<DataItem>& data, int
     vector<double> result_item;
     double sum = 0.0;
     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
-      if(i == 0) {
-        printf("tree id: %d\n", tree_id);
-      }
+
       int cur_node = 0; //root node initially
       int tar_node = 0; //root node initially
 
@@ -423,21 +421,13 @@ vector<vector<double> > GBDT::estimateTreeWise(const vector<DataItem>& data, int
         int split_feature = trees[tree_id].getNode(cur_node).feature_id;
         double partition_value = trees[tree_id].getNode(cur_node).partition_value;
         double feature_value = getFeature(data, i, split_feature).value;
-        if(i == 0) {
-          printf("split feature = %d, partition value = %lf, feature value = %lf, ", split_feature, partition_value, feature_value);
-        }
+
         if(feature_value <= partition_value) {
-          if(i == 0) {
-            printf("to left\n");
-          }
           tar_node = cur_node;
           cur_node = trees[tree_id].getLeftNodeId(cur_node);
         }
         else {
           tar_node = cur_node;
-          if(i == 0) {
-            printf("to right\n");
-          }
           cur_node = trees[tree_id].getRightNodeId(cur_node);
         }
       }
