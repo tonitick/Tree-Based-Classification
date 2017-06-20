@@ -17,7 +17,9 @@ class Bagging {
  public:
   Bagging(int data_size, int feature_size);
   void addOne(const vector<DataItem>& data, int item_num, int feature_num);
-  vector<double >estimate(const vector<DataItem>& data);
+  vector<double> estimate(const vector<DataItem>& data);
+
+  void crossValidation(const vector<DataItem>& data, int val_size);
 };
 
 #endif

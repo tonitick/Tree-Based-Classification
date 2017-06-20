@@ -359,10 +359,10 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
       loss += (sigmoid(y) - data[itempacks[i].item_index].label) * (sigmoid(y) - data[itempacks[i].item_index].label);
     }
     printf("data size = %d\n", itempacks.size());
-    printf("average loss of previous %d trees: %lf\n", tree_id + 1,loss / itempacks.size());
+    printf("average loss of previous %d trees: %lf\n", tree_id + 1, loss / itempacks.size());
   }
 
-  return loss;
+  return loss / itempacks.size();
 }
 
 vector<double> GBDT::estimate(const vector<DataItem>& data) {
@@ -391,7 +391,6 @@ vector<double> GBDT::estimate(const vector<DataItem>& data) {
 
       //add value
       value += trees[tree_id].getNode(tar_node).node_value;
-
     }
     
     result.push_back(sigmoid(value));

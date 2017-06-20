@@ -37,5 +37,8 @@ int main() {
   string output_path = "../data/submission.txt";
   writeData(output_path, ouput);
 
+  //cross validation
+  bagging.crossValidation(train_data, 200000);
+
   return 0;
 }

@@ -70,17 +70,63 @@ vector<double> Bagging::estimate(const vector<DataItem>& data) {
   }
   for(int i = 0; i < bagging_size; i++) {
     weight[i] = 1.0 / losses[i] / sum;
+    printf("bag %d: loss = %lf, weight = %lf\n", losses[i], weight[i]);
   }
 
   //get result
   vector<double> result(data.size());
+  for(int i = 0; i < result.size(); i++) {
+    assert(result[i] == 0.0);
+  }
   assert(bagging_size == gbdts.size());
   for(int i = 0; i < bagging_size; i++) {
     vector<double> sub_result = gbdts[i].estimate(data);
     for(int j = 0; j < data.size(); j++) {
-      result[j] += weight[j] * sub_result[j];
+      result[j] += weight[i] * sub_result[j];
     }
   }
 
   return result;
+}
+
+void Bagging::crossValidation(const vector<DataItem>& data, int val_size) {
+  scatter(item_candidate);
+
+  vector<DataItem> val_data;
+  for(int i = 0; i < val_size; i++) {
+    val_data.push_back(data[item_candidate[i]]);
+  }
+
+  //get weight
+  vector<double> weight(bagging_size);
+  double sum = 0.0;
+  assert(bagging_size == losses.size());
+  for(int i = 0; i < bagging_size; i++) {
+    sum += 1.0 / losses[i];
+  }
+  for(int i = 0; i < bagging_size; i++) {
+    weight[i] = 1.0 / losses[i] / sum;
+    // printf("bag %d: loss = %lf, weight = %lf\n", losses[i], weight[i]);
+  }
+
+  //get result
+  vector<double> result(val_size);
+  for(int i = 0; i < val_size; i++) {
+    assert(result[i] == 0.0);
+  }
+  assert(bagging_size == gbdts.size());
+  for(int i = 0; i < bagging_size; i++) {
+    vector<double> sub_result = gbdts[i].estimate(val_data);
+    for(int j = 0; j < val_size; j++) {
+      // printf("weight = %lf, sub result = %lf\n", weight[i], sub_result[j]);
+      result[j] += weight[i] * sub_result[j];
+    }
+  }
+
+  double loss = 0.0;
+  for(int i = 0; i < val_size; i++) {
+    loss += (result[i] - data[item_candidate[i]].label) * (result[i] - data[item_candidate[i]].label);
+    // printf("result i = %lf\n", result[i]);
+  }
+  printf("average loss of cross validation: %lf\n", loss / val_size);
 }
