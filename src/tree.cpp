@@ -294,6 +294,7 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
   printf("original average loss = %lf\n", loss / itempacks.size());
 
   //build trees one by one
+  double rate = 1.0;
   for(int tree_id = 0; tree_id < tree_num; tree_id++) {
     int leaves = 1;
     Tree treeToAdd;
@@ -351,7 +352,7 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
     loss = 0.0;
     for(int i = 0; i < itempacks.size(); i++) {
       // printf("itempack size = %d\n", itempacks.size());
-      itempacks[i].current_sum += itempacks[i].current_value;
+      itempacks[i].current_sum += rate * itempacks[i].current_value;
       // printf("%d\n", itempacks[i].item_index);
       // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       // itempacks[i].second_order = 2.0;
@@ -362,6 +363,10 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
       
       loss += (sigmoid(y) - data[itempacks[i].item_index].label) * (sigmoid(y) - data[itempacks[i].item_index].label);
     }
+
+    //rate decaying
+    rate *= DECAYING_RATE;
+
     printf("data size = %d\n", itempacks.size());
     printf("average loss of previous %d trees: %lf\n", tree_id + 1, loss / itempacks.size());
   }
@@ -370,10 +375,11 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
 }
 
 vector<double> GBDT::estimate(const vector<DataItem>& data) {
-  vector<double> result;
-   
+  vector<double> result(data.size());
+
   for(int i = 0; i < data.size(); i++) {
     double value = 0.0;
+    double rate = 1.0;
     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
       int cur_node = 0; //root node initially
       int tar_node = 0; //root node initially
@@ -394,10 +400,13 @@ vector<double> GBDT::estimate(const vector<DataItem>& data) {
       }
 
       //add value
-      value += trees[tree_id].getNode(tar_node).node_value;
+      value += rate * trees[tree_id].getNode(tar_node).node_value;
+
+      //rate decaying
+      rate *= DECAYING_RATE;
     }
     
-    result.push_back(sigmoid(value));
+    result[i] = sigmoid(value);
   }
   
   return result;
