@@ -192,20 +192,23 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
 
         if(getObj(gl, hl) + getObj(gr, hr) < opt_obj) {
           if(fraction <= 0.1) {
-            if(start != 0) {
+            if(start != 0) {//guarantee not to split point that is out of range
               split_point = cur_nodepack.start_index + start - 1;
-              partition_value = index_feature[split_point].feature.value;
+              partition_value = index_feature[start - 1].feature.value;
               opt_obj = getObj(gl, hl) + getObj(gr, hr);
               left_value = getVal(gl, hl);
               right_value = getVal(gr, hr);
             }
           }
           else if(fraction >= 0.9) {
-            split_point = cur_nodepack.start_index + end - 1;
-            partition_value = index_feature[split_point].feature.value;
-            opt_obj = getObj(gl, hl) + getObj(gr, hr);
-            left_value = getVal(gl, hl);
-            right_value = getVal(gr, hr);
+            if(index_feature[end - 1].feature.value
+                != index_feature[end].feature.value) {
+              split_point = cur_nodepack.start_index + end - 1;
+              partition_value = index_feature[end - 1].feature.value;
+              opt_obj = getObj(gl, hl) + getObj(gr, hr);
+              left_value = getVal(gl, hl);
+              right_value = getVal(gr, hr);
+            }
           }
           else {
             assert(0);
@@ -213,6 +216,7 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
 
         }
       }
+      
       index = end;
     }
 
