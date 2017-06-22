@@ -75,17 +75,20 @@ Feature getFeature(const vector<DataItem>& data, int item_id, int feature_id) {
   return feature;
 }
 
-void showData(const vector<DataItem>& items) {
-  for(int i = 0; i < items.size(); i++) {
-    DataItem item = items[i];
-    printf("%d", item.label);
-    for(int j = 0; j < item.features.size(); j++) {
-      printf(" %d:%lf", item.features[j].feature_id, 
-          item.features[j].value);
-    }
-    printf("\n");
-  }
-}
+
+// below are functions for debugging, commented
+
+// void showData(const vector<DataItem>& items) {
+//   for(int i = 0; i < items.size(); i++) {
+//     DataItem item = items[i];
+//     printf("%d", item.label);
+//     for(int j = 0; j < item.features.size(); j++) {
+//       printf(" %d:%lf", item.features[j].feature_id, 
+//           item.features[j].value);
+//     }
+//     printf("\n");
+//   }
+// }
 
 // void writeDataTreeWise(string file_path, const vector<vector<double> >& data, int train_test) {
 //   ofstream output_file(file_path.c_str());

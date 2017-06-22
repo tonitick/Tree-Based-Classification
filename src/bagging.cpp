@@ -70,7 +70,6 @@ vector<double> Bagging::estimate(const vector<DataItem>& data) {
   }
   for(int i = 0; i < bagging_size; i++) {
     weight[i] = 1.0 / losses[i] / sum;
-    printf("bag %d: loss = %lf, weight = %lf\n", losses[i], weight[i]);
   }
 
   //get result

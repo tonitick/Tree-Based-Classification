@@ -285,7 +285,6 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
     // itemPackToAdd.second_order = 2.0;
     itemPackToAdd.first_order = sigmoid(0.0) - data[items_index[i]].label;
     itemPackToAdd.second_order = exp(-0.0) * sigmoid(0.0) * sigmoid(0.0);
-    // printf("first = %lf, second = %lf\n", itemPackToAdd.first_order, itemPackToAdd.second_order);
     itempacks.push_back(itemPackToAdd);
     
     loss += (sigmoid(0.0) - data[items_index[i]].label) * (sigmoid(0.0) - data[items_index[i]].label);
@@ -351,13 +350,10 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
     sort(itempacks.begin(), itempacks.end(), cmp_index);
     loss = 0.0;
     for(int i = 0; i < itempacks.size(); i++) {
-      // printf("itempack size = %d\n", itempacks.size());
       itempacks[i].current_sum += rate * itempacks[i].current_value;
-      // printf("%d\n", itempacks[i].item_index);
       // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       // itempacks[i].second_order = 2.0;
       double y = itempacks[i].current_sum;
-      // assert(itempacks[i].item_index == i);
       itempacks[i].first_order = sigmoid(y) - data[itempacks[i].item_index].label;
       itempacks[i].second_order = exp(-y) * sigmoid(y) * sigmoid(y);
       
@@ -377,6 +373,7 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
 vector<double> GBDT::estimate(const vector<DataItem>& data) {
   vector<double> result(data.size());
 
+  #pragma omp parallel for
   for(int i = 0; i < data.size(); i++) {
     double value = 0.0;
     double rate = 1.0;
@@ -412,64 +409,22 @@ vector<double> GBDT::estimate(const vector<DataItem>& data) {
   return result;
 }
 
-vector<vector<double> > GBDT::estimateTreeWise(const vector<DataItem>& data, int train_test) {
-  vector<vector<double> > result;
-  
-  vector<double> for_print(trees.size());
-  for(int i = 0; i< for_print.size(); i++) {
-    for_print[i] = 0.0;
+void Tree::showTree() {
+  for(int i = 0; i < nodes.size(); i++) {
+    printf("node %d: left node = %d, right node = %d, feature id = %d, partition value = %lf, node_value= %lf, level = %d\n",
+        i, left[i], right[i], nodes[i].feature_id, nodes[i].partition_value, nodes[i].node_value, nodes[i].level);
   }
-
-  for(int i = 0; i < data.size(); i++) {
-    vector<double> result_item;
-    double sum = 0.0;
-    for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
-
-      int cur_node = 0; //root node initially
-      int tar_node = 0; //root node initially
-
-      //find the node that the data item is assigned to
-      while(cur_node != -1) {
-        int split_feature = trees[tree_id].getNode(cur_node).feature_id;
-        double partition_value = trees[tree_id].getNode(cur_node).partition_value;
-        double feature_value = getFeature(data, i, split_feature).value;
-
-        if(feature_value <= partition_value) {
-          tar_node = cur_node;
-          cur_node = trees[tree_id].getLeftNodeId(cur_node);
-        }
-        else {
-          tar_node = cur_node;
-          cur_node = trees[tree_id].getRightNodeId(cur_node);
-        }
-      }
-
-      //add value
-      double value = trees[tree_id].getNode(tar_node).node_value; //value of currnet tree
-      sum += value; //sum
-      result_item.push_back(value);
-      result_item.push_back(sum);
-      result_item.push_back(sigmoid(sum)); //estimate value
-      if(train_test == 0) {
-        result_item.push_back((sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label));
-        for_print[tree_id] += (sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label);
-      }
-    }
-    if(train_test == 0) {
-      result_item.push_back(data[i].label);
-    }
-
-    result.push_back(result_item);
-  }
-
-  if(train_test == 0) {
-    printf("data size = %d\n", data.size());
-    for(int i = 0; i < for_print.size(); i++) {
-      printf("average loss of tree %d: %f\n", i, for_print[i] / data.size());
-    }
-  }
-  return result;
 }
+
+void GBDT::show() {
+  for(int i = 0; i < trees.size(); i++) {
+    printf("tree %d:\n", i);
+    trees[i].showTree();
+    printf("\n");
+  }
+}
+
+// below are functions for debugging, commented
 
 // vector<vector<double> > GBDT::build(const vector<DataItem>& data, vector<int> items_index) {
 //   vector<vector<double> > result;
@@ -582,19 +537,61 @@ vector<vector<double> > GBDT::estimateTreeWise(const vector<DataItem>& data, int
 //   return result;
 // }
 
-void Tree::showTree() {
-  assert(nodes.size() == left.size());
-  assert(nodes.size() == right.size());
-  for(int i = 0; i < nodes.size(); i++) {
-    printf("node %d: left node = %d, right node = %d, feature id = %d, partition value = %lf, node_value= %lf, level = %d\n",
-        i, left[i], right[i], nodes[i].feature_id, nodes[i].partition_value, nodes[i].node_value, nodes[i].level);
-  }
-}
+// vector<vector<double> > GBDT::estimateTreeWise(const vector<DataItem>& data, int train_test) {
+//   vector<vector<double> > result;
+  
+//   vector<double> for_print(trees.size());
+//   for(int i = 0; i< for_print.size(); i++) {
+//     for_print[i] = 0.0;
+//   }
 
-void GBDT::show() {
-  for(int i = 0; i < trees.size(); i++) {
-    printf("tree %d:\n", i);
-    trees[i].showTree();
-    printf("\n");
-  }
-}
+//   for(int i = 0; i < data.size(); i++) {
+//     vector<double> result_item;
+//     double sum = 0.0;
+//     for(int tree_id = 0; tree_id < trees.size(); tree_id++) {
+
+//       int cur_node = 0; //root node initially
+//       int tar_node = 0; //root node initially
+
+//       //find the node that the data item is assigned to
+//       while(cur_node != -1) {
+//         int split_feature = trees[tree_id].getNode(cur_node).feature_id;
+//         double partition_value = trees[tree_id].getNode(cur_node).partition_value;
+//         double feature_value = getFeature(data, i, split_feature).value;
+
+//         if(feature_value <= partition_value) {
+//           tar_node = cur_node;
+//           cur_node = trees[tree_id].getLeftNodeId(cur_node);
+//         }
+//         else {
+//           tar_node = cur_node;
+//           cur_node = trees[tree_id].getRightNodeId(cur_node);
+//         }
+//       }
+
+//       //add value
+//       double value = trees[tree_id].getNode(tar_node).node_value; //value of currnet tree
+//       sum += value; //sum
+//       result_item.push_back(value);
+//       result_item.push_back(sum);
+//       result_item.push_back(sigmoid(sum)); //estimate value
+//       if(train_test == 0) {
+//         result_item.push_back((sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label));
+//         for_print[tree_id] += (sigmoid(sum) - data[i].label) * (sigmoid(sum) - data[i].label);
+//       }
+//     }
+//     if(train_test == 0) {
+//       result_item.push_back(data[i].label);
+//     }
+
+//     result.push_back(result_item);
+//   }
+
+//   if(train_test == 0) {
+//     printf("data size = %d\n", data.size());
+//     for(int i = 0; i < for_print.size(); i++) {
+//       printf("average loss of tree %d: %f\n", i, for_print[i] / data.size());
+//     }
+//   }
+//   return result;
+// }

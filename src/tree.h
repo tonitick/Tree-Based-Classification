@@ -47,10 +47,11 @@ class GBDT {
   GBDT(int tn, int td, int ln);
   void show();
   double build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id);
-  // vector<vector<double> > build(const vector<DataItem>& data, vector<int> items_index);
   vector<double> estimate(const vector<DataItem>& data);
 
-  vector<vector<double> > estimateTreeWise(const vector<DataItem>& data, int train_test);
+
+  // vector<vector<double> > build(const vector<DataItem>& data, vector<int> items_index);
+  // vector<vector<double> > estimateTreeWise(const vector<DataItem>& data, int train_test);
 
  
  private:
