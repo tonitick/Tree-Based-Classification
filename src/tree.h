@@ -2,6 +2,8 @@
 #define __TREE_H__
 
 #include "data.h"
+#include <string>
+using namespace std;
 
 struct ItemPack {
   int item_index; //item index in dataset
@@ -29,12 +31,12 @@ struct TreeNode {
 class Tree {
  public:
   Tree();
-  void showTree();
   void setNode(int node_id, int feature_id, double partition_value);
   TreeNode getNode(int node_id);
   int getLeftNodeId(int node_id);
   int getRightNodeId(int node_id);
   int addNode(int parent_id, int left_right, double pv);
+  void logModel(string file_path);
  
  private:
   vector<TreeNode> nodes;
@@ -45,15 +47,15 @@ class Tree {
 class GBDT {
  public:
   GBDT(int tn, int td, int ln);
-  void show();
-  double build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id);
+  double build(const vector<DataItem>& data,
+      const vector<int> items_index, const vector<int> features_id);
   vector<double> estimate(const vector<DataItem>& data);
+  void logModel(string file_path);
 
-
+  // function for debugging, commented
   // vector<vector<double> > build(const vector<DataItem>& data, vector<int> items_index);
   // vector<vector<double> > estimateTreeWise(const vector<DataItem>& data, int train_test);
 
- 
  private:
   int tree_num;
   int tree_depth;

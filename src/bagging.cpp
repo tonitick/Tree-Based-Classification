@@ -5,6 +5,11 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <fstream>
+#include <iostream>
+#include <string>
+using namespace std;
+
 int random(int start, int end) {
   return (int)((double)(start) + (double)(end - start) * rand() / (RAND_MAX + 1.0));
 }
@@ -105,7 +110,6 @@ void Bagging::crossValidation(const vector<DataItem>& data, int val_size) {
   }
   for(int i = 0; i < bagging_size; i++) {
     weight[i] = 1.0 / losses[i] / sum;
-    // printf("bag %d: loss = %lf, weight = %lf\n", losses[i], weight[i]);
   }
 
   //get result
@@ -117,7 +121,6 @@ void Bagging::crossValidation(const vector<DataItem>& data, int val_size) {
   for(int i = 0; i < bagging_size; i++) {
     vector<double> sub_result = gbdts[i].estimate(val_data);
     for(int j = 0; j < val_size; j++) {
-      // printf("weight = %lf, sub result = %lf\n", weight[i], sub_result[j]);
       result[j] += weight[i] * sub_result[j];
     }
   }
@@ -125,7 +128,31 @@ void Bagging::crossValidation(const vector<DataItem>& data, int val_size) {
   double loss = 0.0;
   for(int i = 0; i < val_size; i++) {
     loss += (result[i] - data[item_candidate[i]].label) * (result[i] - data[item_candidate[i]].label);
-    // printf("result i = %lf\n", result[i]);
   }
   printf("average loss of cross validation: %lf\n", loss / val_size);
+}
+
+void Bagging::logModel(string file_path) {
+  ofstream log_file;
+  log_file.open(file_path.c_str());
+  //parameters
+  log_file << "bagging size = " << BAGGING_SIZE << ", "
+           << "boosting size = " << BOOSTING_SIZE << ", "
+           << "max leaves = " << MAX_LEAVES << ", "
+           << "max depth = " << MAX_DEPTH << ", "
+           << "decaying rate = " << DECAYING_RATE << ", "
+           << "scatter ratio = " << SCATTER_RATIO << endl;
+  log_file.close();
+  
+  for(int i = 0; i < bagging_size; i++) {
+    log_file.open(file_path.c_str(), ios::app);
+    log_file << "bagging " << i << ":" << endl;
+    log_file.close();
+
+    gbdts[i].logModel(file_path);
+
+    log_file.open(file_path.c_str(), ios::app);
+    log_file << endl;
+    log_file.close();
+  }
 }

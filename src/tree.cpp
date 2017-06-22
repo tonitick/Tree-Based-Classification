@@ -6,6 +6,9 @@
 #include <vector>
 #include <algorithm> //enable sort
 #include <omp.h> //openmp parallelization
+
+#include <fstream>
+#include <iostream> 
 using namespace std;
 
 struct ItemWithOneFeature {
@@ -289,7 +292,7 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
     
     loss += (sigmoid(0.0) - data[items_index[i]].label) * (sigmoid(0.0) - data[items_index[i]].label);
   }
-  printf("data size = %d\n", itempacks.size());
+  printf("data size = %ld\n", itempacks.size());
   printf("original average loss = %lf\n", loss / itempacks.size());
 
   //build trees one by one
@@ -363,7 +366,7 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
     //rate decaying
     rate *= DECAYING_RATE;
 
-    printf("data size = %d\n", itempacks.size());
+    // printf("data size = %ld\n", itempacks.size());
     printf("average loss of previous %d trees: %lf\n", tree_id + 1, loss / itempacks.size());
   }
 
@@ -373,6 +376,7 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
 vector<double> GBDT::estimate(const vector<DataItem>& data) {
   vector<double> result(data.size());
 
+  //estimate each data item with parallelization
   #pragma omp parallel for
   for(int i = 0; i < data.size(); i++) {
     double value = 0.0;
@@ -409,18 +413,31 @@ vector<double> GBDT::estimate(const vector<DataItem>& data) {
   return result;
 }
 
-void Tree::showTree() {
+void Tree::logModel(string file_path) {
+  ofstream log_file;
+  log_file.open(file_path.c_str(), ios::app);
+
   for(int i = 0; i < nodes.size(); i++) {
-    printf("node %d: left node = %d, right node = %d, feature id = %d, partition value = %lf, node_value= %lf, level = %d\n",
-        i, left[i], right[i], nodes[i].feature_id, nodes[i].partition_value, nodes[i].node_value, nodes[i].level);
+    log_file << "node = " << i << ":" << endl
+             << "left node = " << left[i] << ", " 
+             << "right node = " << right[i] << ", "
+             << "feature id = " << nodes[i].feature_id << ", "
+             << "partition value = " << nodes[i].partition_value << ", "
+             << "node value = " << nodes[i].node_value << ", "
+             << "level = " << nodes[i].level << endl;
   }
+
+  log_file.close();
 }
 
-void GBDT::show() {
+void GBDT::logModel(string file_path) {
+  ofstream log_file;
+
   for(int i = 0; i < trees.size(); i++) {
-    printf("tree %d:\n", i);
-    trees[i].showTree();
-    printf("\n");
+    log_file.open(file_path.c_str(), ios::app);
+    log_file << "tree " << i << ":" << endl;
+    log_file.close();
+    trees[i].logModel(file_path);
   }
 }
 

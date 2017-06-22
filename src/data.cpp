@@ -49,6 +49,8 @@ void getData(string file_path, vector<DataItem>& data, int num, int train_test) 
       break;
     }
   }
+
+  input_file.close();
 }
 
 void writeData(string file_path, const vector<double>& data) {
@@ -57,6 +59,8 @@ void writeData(string file_path, const vector<double>& data) {
   for(int i = 0; i < data.size(); i++) {
     output_file << i << ',' << data[i] << endl;
   }
+
+  output_file.close();
 }
 
 Feature getFeature(const vector<DataItem>& data, int item_id, int feature_id) {

@@ -20,6 +20,7 @@ class Bagging {
   vector<double> estimate(const vector<DataItem>& data);
 
   void crossValidation(const vector<DataItem>& data, int val_size);
+  void logModel(string file_path);
 };
 
 #endif
