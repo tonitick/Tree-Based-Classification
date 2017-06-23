@@ -9,7 +9,7 @@ int main() {
   // train data
   vector<DataItem> train_data;
   string train_path = "../data/train_data.txt";
-  printf("loading training data...\n");
+  printf("loading training data (it takes about one minute)...\n");
   getData(train_path, train_data, TRAINING_SET_SIZE, 0);
   printf("training data loaded.\n");
   printf("training data size = %ld\n", train_data.size());
