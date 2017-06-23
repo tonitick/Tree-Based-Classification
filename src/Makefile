@@ -1,5 +1,5 @@
 # To disable openmp parallelization, set USE_OPENMP to 0
-USE_OPENMP := 0
+USE_OPENMP := 1
 
 # To enable debugging, set USE_DEBUG to 1
 USE_DEBUG := 0

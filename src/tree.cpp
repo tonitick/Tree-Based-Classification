@@ -8,7 +8,7 @@
 #include <omp.h> //openmp parallelization
 
 #include <fstream>
-#include <iostream> 
+#include <iostream>
 using namespace std;
 
 struct ItemWithOneFeature {
@@ -153,6 +153,7 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
   #pragma omp parallel for
   for(int feature_index = 0; feature_index < feature_size; feature_index++) {
     int feature_id = features_id[feature_index];
+    
     //get features of each item
     vector<ItemWithOneFeature> index_feature(item_number);
     for(int i = 0; i < item_number; i++) {
@@ -205,7 +206,7 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
           }
           else if(fraction >= 0.9) {
             if(index_feature[end - 1].feature.value
-                != index_feature[end].feature.value) {
+                != index_feature[end].feature.value) {//guarantee not to split at end - 1 when its value is equal to that of end
               split_point = cur_nodepack.start_index + end - 1;
               partition_value = index_feature[end - 1].feature.value;
               opt_obj = getObj(gl, hl) + getObj(gr, hr);
@@ -267,18 +268,21 @@ int GBDT::splitNode(NodePack& cur_nodepack, vector<ItemPack>& itempacks,
         split_point, left_value, right_value, data);
     
     cur_nodepack.feature_id = split_feature;
-    assert(itempacks[split_point].current_value == left_value);
-    assert(itempacks[cur_nodepack.start_index].current_value == left_value);
-    assert(itempacks[cur_nodepack.end_index - 1].current_value == right_value);
+    // assert(itempacks[split_point].current_value == left_value);
+    // assert(itempacks[cur_nodepack.start_index].current_value == left_value);
+    // assert(itempacks[cur_nodepack.end_index - 1].current_value == right_value);
     
     return split_point;
   }
 }
 
-double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, const vector<int> features_id) {
+double GBDT::build(const vector<DataItem>& data, const vector<int> items_index,
+    const vector<int> features_id) {
   trees.clear();
+
   //initialization: all items are assigned 0
   double loss = 0.0;
+  
   vector<ItemPack> itempacks;
   for(int i = 0; i < items_index.size(); i++) {
     ItemPack itemPackToAdd;
@@ -357,6 +361,7 @@ double GBDT::build(const vector<DataItem>& data, const vector<int> items_index, 
       // itempacks[i].first_order = 2.0 * (itempacks[i].current_sum - data[itempacks[i].item_index].label);
       // itempacks[i].second_order = 2.0;
       double y = itempacks[i].current_sum;
+      
       itempacks[i].first_order = sigmoid(y) - data[itempacks[i].item_index].label;
       itempacks[i].second_order = exp(-y) * sigmoid(y) * sigmoid(y);
       
