@@ -1,5 +1,5 @@
 # Tree Based Classification
-An C++ implement of GBDT + Bagging Classification.  
+A C++ implement of GBDT + Bagging Classification.  
 
 # Data
 Data for this program is available on [Large-scale classification-SYSU-2017](https://inclass.kaggle.com/c/large-scale-classification-sysu-2017), where we can also find the description of this classification task.
